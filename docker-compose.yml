@@ -1,0 +1,53 @@
+name: smartvend
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smartvend}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartvend}
+      POSTGRES_DB: ${POSTGRES_DB:-smartvend}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartvend} -d ${POSTGRES_DB:-smartvend}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartvend}:${POSTGRES_PASSWORD:-smartvend}@db:5432/${POSTGRES_DB:-smartvend}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-this-secret-before-deploying-smartvend}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DISPENSER_MODE: simulation
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-720}
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/static/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api/v1
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
