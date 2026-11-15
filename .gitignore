@@ -1,15 +1,25 @@
-# SQLite database
-*.db
-*.sqlite3
+# Python cache
+__pycache__/
+*.py[cod]
 
-# Python environment
+# Python environments
 .venv/
 venv/
 
-# Node
+# Node dependencies
 node_modules/
 **/node_modules/
+
+# Frontend build
+frontend/dist/
+dist/
+build/
+
+# Database
+*.db
+*.sqlite3
 
 # Secrets
 .env
 .env.*
+!.env.example
